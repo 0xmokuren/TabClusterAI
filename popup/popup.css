@@ -170,6 +170,28 @@ h2 {
   line-height: 1.4;
 }
 
+.auto-download-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.auto-download-toggle input {
+  flex: none;
+  cursor: pointer;
+}
+
+.auto-download-hint {
+  margin: 6px 0 0 24px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .panel {
   margin-top: 10px;
   border-radius: var(--radius-md);

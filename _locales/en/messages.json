@@ -113,6 +113,18 @@
   "modelSaved": {
     "message": "Model saved"
   },
+  "autoDownloadModelLabel": {
+    "message": "Auto-download the local model on startup"
+  },
+  "autoDownloadModelHint": {
+    "message": "Off by default. When off, the local model (a few GB) is downloaded only the first time you run \"Organize with AI\". Leave it off if you only use the API."
+  },
+  "autoDownloadEnabled": {
+    "message": "Auto-download enabled"
+  },
+  "autoDownloadDisabled": {
+    "message": "Auto-download disabled"
+  },
   "savedPolicyLoaded": {
     "message": "Loaded saved preferences"
   },

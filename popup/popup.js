@@ -24,6 +24,7 @@ import {
   AI_PROVIDERS,
   loadAiProviderSettings,
   saveAiProvider,
+  saveAutoDownloadModel,
   saveGeminiApiKey,
   saveGeminiApiModel,
 } from '../lib/ai-provider-settings.js';
@@ -75,6 +76,9 @@ const els = {
   userPromptStatus: document.getElementById('user-prompt-status'),
   providerOnDevice: document.getElementById('provider-on-device'),
   providerGeminiApi: document.getElementById('provider-gemini-api'),
+  autoDownloadRow: document.getElementById('auto-download-row'),
+  autoDownloadModel: document.getElementById('auto-download-model'),
+  autoDownloadHint: document.getElementById('auto-download-hint'),
   geminiSettingsSection: document.getElementById('gemini-settings-section'),
   geminiApiKeyInput: document.getElementById('gemini-api-key-input'),
   geminiModelSelect: document.getElementById('gemini-model-select'),
@@ -134,6 +138,12 @@ function isGeminiApiProvider() {
 function updateGeminiApiFieldsVisibility() {
   const showGemini = isGeminiApiProvider();
   els.geminiSettingsSection?.classList.toggle('hidden', !showGemini);
+  els.autoDownloadRow?.classList.toggle('hidden', showGemini);
+  els.autoDownloadHint?.classList.toggle('hidden', showGemini);
+}
+
+function isAutoDownloadEnabled() {
+  return Boolean(els.autoDownloadModel?.checked);
 }
 
 function setStatusDot(state) {
@@ -297,6 +307,23 @@ async function persistAiProvider() {
   }
 }
 
+async function persistAutoDownloadModel() {
+  const enabled = isAutoDownloadEnabled();
+  const saved = await saveAutoDownloadModel(enabled);
+  currentSettings = {
+    ...currentSettings,
+    autoDownloadModel: saved,
+  };
+
+  setAiProviderStatus(saved ? t('autoDownloadEnabled') : t('autoDownloadDisabled'));
+
+  if (saved && !isGeminiApiProvider() && !isSessionReady()) {
+    startSessionPrewarm();
+  }
+
+  return saved;
+}
+
 async function persistGeminiApiModel() {
   if (!els.geminiModelSelect) {
     return currentSettings?.geminiApiModel;
@@ -364,6 +391,10 @@ async function initAiProviderSettings() {
     els.geminiApiKeyInput.value = currentSettings.geminiApiKey;
   }
 
+  if (els.autoDownloadModel) {
+    els.autoDownloadModel.checked = currentSettings.autoDownloadModel;
+  }
+
   updateGeminiApiFieldsVisibility();
   setAiProviderStatus('');
 
@@ -383,6 +414,9 @@ async function initAiProviderSettings() {
   });
   els.geminiModelSelect?.addEventListener('change', () => {
     persistGeminiApiModel().catch(handleFatalError);
+  });
+  els.autoDownloadModel?.addEventListener('change', () => {
+    persistAutoDownloadModel().catch(handleFatalError);
   });
 }
 
@@ -914,7 +948,7 @@ function registerGlobalErrorHandlers() {
 }
 
 function startSessionPrewarm() {
-  if (isGeminiApiProvider()) {
+  if (isGeminiApiProvider() || !isAutoDownloadEnabled()) {
     return;
   }
 

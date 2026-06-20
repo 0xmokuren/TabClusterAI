@@ -107,6 +107,8 @@ Uses Chrome's built-in [Prompt API](https://developer.chrome.com/docs/ai/prompt-
 
 > **Warning:** Enabling **On-device AI** in Chrome settings does **not** install the model. The ~22 GB download starts when you run **Analyze with AI** for the first time.
 
+> **Tip:** The model download is optional. The **"Auto-download the local model on startup"** toggle in the popup is **off by default**, so opening the extension never consumes storage on its own. Leave it off if you only use the API. Turn it on to pre-download the model as soon as the popup opens.
+
 ### Gemini API
 
 Calls Google's Generative Language API. Useful when Prompt API is blocked or hardware is below on-device thresholds.
