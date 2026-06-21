@@ -30,11 +30,15 @@
         <p id="ai-status" class="status-text" data-i18n="statusChecking"></p>
       </div>
       <p id="provider-detail" class="provider-detail hidden"></p>
-      <label id="auto-download-row" class="auto-download-toggle hidden">
-        <input type="checkbox" id="auto-download-model" />
-        <span data-i18n="autoDownloadModelLabel"></span>
-      </label>
-      <p id="auto-download-hint" class="auto-download-hint hidden" data-i18n="autoDownloadModelHint"></p>
+      <div id="model-download-row" class="model-download-row hidden">
+        <button id="download-model-btn" type="button" class="secondary" data-i18n="downloadModelButton"></button>
+        <p id="download-model-hint" class="model-download-hint" data-i18n="downloadModelHint"></p>
+        <p id="download-model-progress" class="model-download-progress hidden" aria-live="polite"></p>
+      </div>
+      <div id="model-manage-row" class="model-download-row hidden">
+        <button id="manage-model-btn" type="button" class="secondary" data-i18n="manageModelButton"></button>
+        <p id="manage-model-hint" class="model-download-hint" data-i18n="manageModelHint"></p>
+      </div>
     </section>
 
     <details id="gemini-settings-section" class="panel gemini-settings hidden">

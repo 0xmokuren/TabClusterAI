@@ -24,7 +24,6 @@ import {
   AI_PROVIDERS,
   loadAiProviderSettings,
   saveAiProvider,
-  saveAutoDownloadModel,
   saveGeminiApiKey,
   saveGeminiApiModel,
 } from '../lib/ai-provider-settings.js';
@@ -76,9 +75,12 @@ const els = {
   userPromptStatus: document.getElementById('user-prompt-status'),
   providerOnDevice: document.getElementById('provider-on-device'),
   providerGeminiApi: document.getElementById('provider-gemini-api'),
-  autoDownloadRow: document.getElementById('auto-download-row'),
-  autoDownloadModel: document.getElementById('auto-download-model'),
-  autoDownloadHint: document.getElementById('auto-download-hint'),
+  modelDownloadRow: document.getElementById('model-download-row'),
+  downloadModelBtn: document.getElementById('download-model-btn'),
+  downloadModelHint: document.getElementById('download-model-hint'),
+  downloadModelProgress: document.getElementById('download-model-progress'),
+  modelManageRow: document.getElementById('model-manage-row'),
+  manageModelBtn: document.getElementById('manage-model-btn'),
   geminiSettingsSection: document.getElementById('gemini-settings-section'),
   geminiApiKeyInput: document.getElementById('gemini-api-key-input'),
   geminiModelSelect: document.getElementById('gemini-model-select'),
@@ -138,12 +140,6 @@ function isGeminiApiProvider() {
 function updateGeminiApiFieldsVisibility() {
   const showGemini = isGeminiApiProvider();
   els.geminiSettingsSection?.classList.toggle('hidden', !showGemini);
-  els.autoDownloadRow?.classList.toggle('hidden', showGemini);
-  els.autoDownloadHint?.classList.toggle('hidden', showGemini);
-}
-
-function isAutoDownloadEnabled() {
-  return Boolean(els.autoDownloadModel?.checked);
 }
 
 function setStatusDot(state) {
@@ -301,27 +297,6 @@ async function persistAiProvider() {
   };
   updateGeminiApiFieldsVisibility();
   await refreshAiStatus();
-
-  if (saved === AI_PROVIDERS.ON_DEVICE) {
-    startSessionPrewarm();
-  }
-}
-
-async function persistAutoDownloadModel() {
-  const enabled = isAutoDownloadEnabled();
-  const saved = await saveAutoDownloadModel(enabled);
-  currentSettings = {
-    ...currentSettings,
-    autoDownloadModel: saved,
-  };
-
-  setAiProviderStatus(saved ? t('autoDownloadEnabled') : t('autoDownloadDisabled'));
-
-  if (saved && !isGeminiApiProvider() && !isSessionReady()) {
-    startSessionPrewarm();
-  }
-
-  return saved;
 }
 
 async function persistGeminiApiModel() {
@@ -391,10 +366,6 @@ async function initAiProviderSettings() {
     els.geminiApiKeyInput.value = currentSettings.geminiApiKey;
   }
 
-  if (els.autoDownloadModel) {
-    els.autoDownloadModel.checked = currentSettings.autoDownloadModel;
-  }
-
   updateGeminiApiFieldsVisibility();
   setAiProviderStatus('');
 
@@ -414,9 +385,6 @@ async function initAiProviderSettings() {
   });
   els.geminiModelSelect?.addEventListener('change', () => {
     persistGeminiApiModel().catch(handleFatalError);
-  });
-  els.autoDownloadModel?.addEventListener('change', () => {
-    persistAutoDownloadModel().catch(handleFatalError);
   });
 }
 
@@ -751,7 +719,12 @@ function shouldDisableAnalyze(result) {
     return result.status === 'missing-key';
   }
 
-  return result.status === 'unavailable' || result.status === 'missing-api';
+  // モデル未ダウンロード状態では Analyze を押せなくし、専用の DL ボタンを使ってもらいます。
+  return (
+    result.status === 'unavailable'
+    || result.status === 'missing-api'
+    || result.status === 'downloadable'
+  );
 }
 
 async function refreshAiStatus() {
@@ -774,6 +747,9 @@ async function refreshAiStatus() {
     if (els.ruleBasedBtn) {
       els.ruleBasedBtn.disabled = false;
     }
+
+    updateModelDownloadRow(result, settings);
+    updateModelManageRow(result, settings);
 
     renderDiagnostics(result);
 
@@ -844,7 +820,7 @@ async function analyzeTabs() {
     setProgress({
       message: t('checkingAiReadiness'),
       percent: 0,
-      detail: t('firstDownloadHint'),
+      detail: null,
       phase: 'preparing',
     });
   } else {
@@ -947,38 +923,90 @@ function registerGlobalErrorHandlers() {
   });
 }
 
-function startSessionPrewarm() {
-  if (isGeminiApiProvider() || !isAutoDownloadEnabled()) {
+function updateModelDownloadRow(result, settings) {
+  if (!els.modelDownloadRow) {
     return;
   }
 
+  // モデル未取得 (downloadable) のとき、または DL 進行中のときだけ行を出します。
+  const showRow =
+    Boolean(sessionWarmPromise)
+    || (settings.aiProvider === AI_PROVIDERS.ON_DEVICE && result.status === 'downloadable');
+
+  els.modelDownloadRow.classList.toggle('hidden', !showRow);
+
+  if (els.downloadModelBtn) {
+    els.downloadModelBtn.disabled = Boolean(sessionWarmPromise);
+  }
+}
+
+function updateModelManageRow(result, settings) {
+  if (!els.modelManageRow) {
+    return;
+  }
+
+  // すでに DL 済み (available) のときだけ管理ボタンを出します。
+  const showRow =
+    settings.aiProvider === AI_PROVIDERS.ON_DEVICE
+    && (result.status === 'available' || result.sessionReady);
+
+  els.modelManageRow.classList.toggle('hidden', !showRow);
+}
+
+function setDownloadProgress(text) {
+  if (!els.downloadModelProgress) {
+    return;
+  }
+  if (text) {
+    els.downloadModelProgress.textContent = text;
+    els.downloadModelProgress.classList.remove('hidden');
+  } else {
+    els.downloadModelProgress.textContent = '';
+    els.downloadModelProgress.classList.add('hidden');
+  }
+}
+
+async function startModelDownload() {
+  if (sessionWarmPromise || isGeminiApiProvider()) {
+    return;
+  }
+
+  if (els.downloadModelBtn) {
+    els.downloadModelBtn.disabled = true;
+  }
+  setDownloadProgress(t('downloadModelStarting'));
+  setStatusDot('pending');
+
   sessionWarmPromise = warmSession({
     onProgress(progress) {
-      if (!els.aiStatus || isSessionReady()) {
-        return;
-      }
-
       if (progress.phase === 'downloading' || progress.phase === 'background') {
+        setDownloadProgress(progress.message);
         if (els.aiStatus) {
           els.aiStatus.textContent = progress.message;
         }
-        setStatusDot('pending');
         setProviderDetail(t('localAiDetail'));
       } else if (progress.phase === 'loading' || progress.percent === 0) {
+        setDownloadProgress(t('loadingAiModel'));
         if (els.aiStatus) {
           els.aiStatus.textContent = t('loadingAiModel');
         }
-        setStatusDot('pending');
         setProviderDetail(t('localAiDetail'));
       }
     },
   })
     .then(async () => {
+      setDownloadProgress(t('downloadModelComplete'));
       await refreshAiStatus();
     })
-    .catch(handleFatalError)
+    .catch((error) => {
+      setDownloadProgress(t('downloadModelFailed'));
+      handleFatalError(error);
+    })
     .finally(() => {
       sessionWarmPromise = null;
+      if (els.downloadModelBtn) {
+        els.downloadModelBtn.disabled = false;
+      }
     });
 }
 
@@ -992,6 +1020,12 @@ function init() {
   els.applyBtn?.addEventListener('click', applyGroups);
   els.cancelBtn?.addEventListener('click', resetPreview);
   els.ungroupAllBtn?.addEventListener('click', ungroupAllInScope);
+  els.downloadModelBtn?.addEventListener('click', () => {
+    startModelDownload().catch(handleFatalError);
+  });
+  els.manageModelBtn?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'chrome://on-device-internals' });
+  });
 
   window.addEventListener('pagehide', () => {
     releaseSession();
@@ -1001,7 +1035,6 @@ function init() {
     .then(async () => {
       await initUserPromptSettings();
       await refreshAiStatus();
-      startSessionPrewarm();
     })
     .catch(handleFatalError);
 }
