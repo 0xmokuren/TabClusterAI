@@ -7,7 +7,9 @@
     "validate": "node scripts/validate.mjs",
     "build": "node scripts/package.mjs",
     "generate-icons": "node scripts/generate-icons.mjs",
-    "check": "npm run validate && npm run lint"
+    "check": "npm run validate && npm run lint",
+    "release:publish": "node scripts/release/publish-webstore.mjs",
+    "release:get-token": "node scripts/release/get-refresh-token.mjs"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",

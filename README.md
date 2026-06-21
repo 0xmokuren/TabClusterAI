@@ -346,6 +346,38 @@ TabClusterAI/
 | `npm run validate` | Manifest, files, `_locales` key parity |
 | `npm run lint` | ESLint 9 |
 | `npm run build` | Stage + ZIP for Releases |
+| `npm run release:publish` | Upload + submit to Chrome Web Store (used by CI) |
+| `npm run release:get-token` | Obtain a refresh_token (one-time local setup) |
+
+### Release flow
+
+Push a `v*.*.*` tag and `.github/workflows/release.yml` runs: build → GitHub Release → Chrome Web Store submission. The Web Store step only runs after manual approval on the `chrome-web-store` GitHub Environment.
+
+```bash
+# Bump manifest.json version, commit, then:
+git tag v1.5.6
+git push origin v1.5.6
+# → Approve "Review deployments" in Actions to submit to the Web Store
+```
+
+### One-time Web Store setup
+
+1. Enable the [Chrome Web Store API](https://console.cloud.google.com/apis/library/chromewebstore.googleapis.com) in a GCP project
+2. Create an **OAuth client ID** of type **Desktop app**; note the `client_id` and `client_secret`
+3. Obtain a refresh_token locally:
+   ```bash
+   npm run release:get-token
+   # → authorize in the browser → copy the printed refresh_token
+   ```
+4. Register on the GitHub repository:
+   - Secrets: `CWS_CLIENT_ID` / `CWS_CLIENT_SECRET` / `CWS_REFRESH_TOKEN`
+   - Variables: `CWS_EXTENSION_ID` (the published extension ID)
+5. Settings → Environments → create `chrome-web-store` with **Required reviewers** set to yourself
+
+> **Security notes**
+> - `client_secret` and `refresh_token` grant the same level of access as the owner of the GCP project. Do not store them anywhere except GitHub Secrets (no cloud-synced files, no shell history)
+> - If you suspect a leak, delete and recreate the OAuth client from the GCP console
+> - The OAuth scope is limited to `https://www.googleapis.com/auth/chromewebstore` (update your own extension on the Web Store only)
 
 ---
 
