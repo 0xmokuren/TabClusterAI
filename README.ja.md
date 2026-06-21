@@ -348,6 +348,38 @@ TabClusterAI/
 | `npm run validate` | manifest・ファイル・`_locales` キー一致 |
 | `npm run lint` | ESLint 9 |
 | `npm run build` | ステージング + Release 用 ZIP |
+| `npm run release:publish` | Chrome Web Store にアップロード + 公開申請（CI から実行） |
+| `npm run release:get-token` | refresh_token を取得（初回セットアップ用ローカルツール） |
+
+### リリースフロー
+
+`v*.*.*` 形式のタグを push すると `.github/workflows/release.yml` が起動し、ビルド → GitHub Release 作成 → Chrome Web Store 公開申請まで進みます。Web Store への公開申請は GitHub Environment `chrome-web-store` の手動承認後にのみ実行されます。
+
+```bash
+# manifest.json の version を更新してコミット
+git tag v1.5.6
+git push origin v1.5.6
+# → Actions の "Review deployments" で Approve すると Web Store に審査申請
+```
+
+### Chrome Web Store 公開の初回セットアップ
+
+1. GCP プロジェクトで [Chrome Web Store API](https://console.cloud.google.com/apis/library/chromewebstore.googleapis.com) を有効化
+2. 「OAuth クライアント ID」を作成（種類: **デスクトップ アプリ**）。`client_id` と `client_secret` を控える
+3. ローカルで refresh_token を取得：
+   ```bash
+   npm run release:get-token
+   # → ブラウザで認可 → 出力された refresh_token を控える
+   ```
+4. GitHub リポジトリに登録：
+   - Secrets: `CWS_CLIENT_ID` / `CWS_CLIENT_SECRET` / `CWS_REFRESH_TOKEN`
+   - Variables: `CWS_EXTENSION_ID`（Web Store の拡張機能 ID）
+5. Settings → Environments で `chrome-web-store` を作成し、**Required reviewers** を自分に設定
+
+> **セキュリティ注意点**
+> - `client_secret` と `refresh_token` は GCP プロジェクトのオーナーと同等の権限を持ちます。GitHub Secrets 以外の場所（クラウド同期されるファイル、シェル履歴など）には保存しないでください
+> - 漏洩を疑う場合は GCP コンソールから OAuth クライアントを削除して再発行してください
+> - スコープは `https://www.googleapis.com/auth/chromewebstore` のみ（Web Store の自分の拡張機能を更新する権限）に限定されます
 
 ---
 
