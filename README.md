@@ -146,15 +146,15 @@ Calls Google's Generative Language API. Useful when Prompt API is blocked or har
 
 ## First-time model download
 
-Applies **only to on-device mode**.
+Applies **only to on-device mode**. Nothing is downloaded automatically — it only starts when you explicitly click the **Download model** button in the popup.
 
 | Phase | What happens | What you see |
 | --- | --- | --- |
-| **1. Trigger** | First **Analyze with AI** | “Checking AI readiness…” |
+| **1. Trigger** | Click **Download model** in the popup | “Starting download…” |
 | **2. Download** | Chrome fetches ~22 GB | Percent + estimated bytes |
-| **3. Background** | Chrome may DL before you analyze | Elapsed time indicator |
+| **3. Background** | Chrome may DL further in background | Elapsed time indicator |
 | **4. Load** | Model loaded into memory | “Loading model…” |
-| **5. Ready** | Later runs use cache | No repeat download |
+| **5. Ready** | Analyze button becomes enabled; later runs use cache | “Download complete” |
 
 | Metric | Estimate |
 | --- | --- |
@@ -163,7 +163,13 @@ Applies **only to on-device mode**.
 | Network | Unmetered connection recommended |
 | Disk | 22 GB+ free space |
 
-> **Tip:** Keep the popup **open** during the first run so progress stays visible. Closing the popup stops the UI update; Chrome may still download in the background.
+> **Tip:** Keep the popup **open** during the download so progress stays visible. Closing the popup stops the UI update; Chrome may still download in the background.
+
+> **API-only users:** If you never click **Download model**, the local model is never fetched. Switch the provider to Gemini API.
+
+### Removing the model
+
+To delete an already-downloaded model, click **Manage model in Chrome settings** in the popup. This opens `chrome://on-device-internals` where you can remove the model manually. Chrome's `LanguageModel` API does not expose a deletion method, so the extension cannot remove it directly. Note that Chrome itself removes the model automatically when free disk space drops below 10 GB.
 
 ---
 

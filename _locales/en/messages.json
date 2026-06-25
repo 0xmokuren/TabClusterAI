@@ -113,17 +113,26 @@
   "modelSaved": {
     "message": "Model saved"
   },
-  "autoDownloadModelLabel": {
-    "message": "Auto-download the local model on startup"
+  "downloadModelButton": {
+    "message": "Download model"
   },
-  "autoDownloadModelHint": {
-    "message": "Off by default. When off, the local model (a few GB) is downloaded only the first time you run \"Organize with AI\". Leave it off if you only use the API."
+  "downloadModelHint": {
+    "message": "On-device analysis requires a local model (several GB). You can start the download whenever you want."
   },
-  "autoDownloadEnabled": {
-    "message": "Auto-download enabled"
+  "downloadModelStarting": {
+    "message": "Starting download…"
   },
-  "autoDownloadDisabled": {
-    "message": "Auto-download disabled"
+  "downloadModelComplete": {
+    "message": "Download complete"
+  },
+  "downloadModelFailed": {
+    "message": "Download failed"
+  },
+  "manageModelButton": {
+    "message": "Manage model in Chrome settings"
+  },
+  "manageModelHint": {
+    "message": "To free up disk space, you can manually remove the model from Chrome's management page (chrome://on-device-internals)."
   },
   "savedPolicyLoaded": {
     "message": "Loaded saved preferences"
@@ -273,9 +282,6 @@
   },
   "checkingAiReadiness": {
     "message": "Checking AI readiness…"
-  },
-  "firstDownloadHint": {
-    "message": "First run may require downloading about 22 GB"
   },
   "aiThinking": {
     "message": "AI is thinking…"
